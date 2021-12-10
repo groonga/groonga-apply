@@ -2,7 +2,7 @@
 
 ## Description
 
-Groonga sync provides tools to synchronize Groonga data with imported data by [Groonga import](https://github.com/groonga/groonga-import).
+Groonga sync provides tools to synchronize Groonga database with imported data by [Groonga import](https://github.com/groonga/groonga-import).
 
 ## Install
 
