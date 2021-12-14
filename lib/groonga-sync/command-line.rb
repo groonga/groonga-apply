@@ -19,20 +19,17 @@ require_relative "local-source"
 
 module GroongaSync
   class CommandLine
-    def initialize(output=nil)
-      @output = output || "-"
+    def initialize
       @dir = "."
     end
 
     def run(args)
       catch do |tag|
         parse_args(args, tag)
-        open_output do |output|
-          # TODO: Logger
-          source = LocalSource.new(dir: @dir)
-          source.sync
-          true
-        end
+        # TODO: Logger
+        source = LocalSource.new(dir: @dir)
+        source.sync
+        true
       end
     end
 
@@ -55,17 +52,6 @@ module GroongaSync
         throw(tag, true)
       end
       parser.parse!(args.dup)
-    end
-
-    def open_output(&block)
-      case @output
-      when "-"
-        yield($stdout)
-      when String
-        File.open(@output, "w", &block)
-      else
-        yield(@output)
-      end
     end
   end
 end

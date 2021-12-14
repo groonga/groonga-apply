@@ -15,11 +15,9 @@
 
 class CommandLineTest < Test::Unit::TestCase
   def run_command(*args)
-    output = StringIO.new
-    command_line = GroongaSync::CommandLine.new(output)
+    command_line = GroongaSync::CommandLine.new
     Dir.chdir(@dir) do
-      success = command_line.run(["--dir=#{@dir}", *args])
-      [success, output.string]
+      command_line.run(["--dir=#{@dir}", *args])
     end
   end
 
@@ -165,7 +163,7 @@ table_create Items TABLE_HASH_KEY ShortText
 column_create Items name COLUMN_SCALAR ShortText
 column_create Items price COLUMN_SCALAR UInt32
       SCHEMA
-      assert_equal([true, ""], run_command)
+      assert_true(run_command)
       assert_equal(<<-DUMP, dump_db)
 table_create Items TABLE_HASH_KEY ShortText
 column_create Items name COLUMN_SCALAR ShortText
@@ -181,7 +179,7 @@ load --table Items
 {"_key": "item2", "name": "Hat"}
 ]
       LOAD
-      assert_equal([true, ""], run_command)
+      assert_true(run_command)
       assert_equal(<<-DUMP, dump_db)
 table_create Items TABLE_HASH_KEY ShortText
 column_create Items name COLUMN_SCALAR ShortText

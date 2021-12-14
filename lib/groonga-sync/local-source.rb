@@ -120,7 +120,7 @@ module GroongaSync
       end
     end
 
-    TABLE_TARGET_SUFFIXES = [".grn", "parquet"]
+    TABLE_TARGET_SUFFIXES = [".grn", ".parquet"]
     def each_table_target(dir, name, min_timestamp, max_timestamp)
       each_target_path(dir,
                        min_timestamp,
@@ -226,6 +226,7 @@ module GroongaSync
         if @path.end_with?(".grn")
           processor.load(@path)
         else
+          # TODO: Add support for @action == "delete"
           table = Arrow::Table.load(@path)
           client.load(table: @name,
                       values: table)
