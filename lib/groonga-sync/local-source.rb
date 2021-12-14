@@ -23,16 +23,16 @@ require_relative "status"
 module GroongaSync
   class LocalSource
     def initialize(dir: ".")
-      @dir = dir
+      dir = dir
       @config = Config.new(File.join(dir, "config.yaml"))
       @status = Status.new(File.join(dir, "status.yaml"))
+      @delta_dir = File.expand_path(@config.delta_dir, dir)
     end
 
     def sync
       start_time = read_current_status
       current_time = Time.now.utc
-      delta_dir = File.expand_path(@config.delta_dir, @dir)
-      targets = list_targets(delta_dir, start_time, current_time)
+      targets = list_targets(@delta_dir, start_time, current_time)
       client_options = {
         url: @config.groonga.url,
         read_timeout: @config.groonga.read_timeout,
