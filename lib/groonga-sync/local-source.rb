@@ -22,11 +22,11 @@ require_relative "status"
 
 module GroongaSync
   class LocalSource
-    def initialize(dir: ".")
-      dir = dir
-      @config = Config.new(File.join(dir, "config.yaml"))
-      @status = Status.new(File.join(dir, "status.yaml"))
-      @delta_dir = File.expand_path(@config.delta_dir, dir)
+    def initialize(config, status)
+      @config = config
+      @status = status
+      @logger = @config.logger
+      @delta_dir = @config.delta_dir
     end
 
     def sync

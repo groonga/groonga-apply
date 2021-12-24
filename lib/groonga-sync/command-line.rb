@@ -21,14 +21,20 @@ module GroongaSync
   class CommandLine
     def initialize
       @dir = "."
+      @server = false
     end
 
     def run(args)
       catch do |tag|
         parse_args(args, tag)
-        # TODO: Logger
-        source = LocalSource.new(dir: @dir)
-        source.sync
+        config = Config.new(@dir)
+        status = Status.new(@dir)
+        source = LocalSource.new(config, status)
+        loop do
+          source.sync
+          break unless @server
+          sleep(config.polling_interval)
+        end
         true
       end
     end
@@ -40,6 +46,10 @@ module GroongaSync
                 "Use DIR as directory that has configuration files",
                 "(#{@dir})") do |dir|
         @dir = dir
+      end
+      parser.on("--server",
+                "Run as a server") do
+        @server = true
       end
       parser.on("--version",
                 "Show version and exit") do

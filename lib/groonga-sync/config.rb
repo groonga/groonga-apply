@@ -13,25 +13,74 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+require "fileutils"
+require "logger"
 require "yaml"
 
 module GroongaSync
   class Config
-    def initialize(path)
-      if File.exist?(path)
-        @data = YAML.load(File.read(path))
+    module PathResolvable
+      private
+      def resolve_path(path)
+        File.expand_path(path, @dir)
+      end
+    end
+
+    include PathResolvable
+
+    def initialize(dir)
+      @dir = dir
+      @path = File.join(@dir, "config.yaml")
+      if File.exist?(@path)
+        @data = YAML.load(File.read(@path))
       else
         @data = {}
       end
     end
 
     def delta_dir
-      # TODO: Improve error handling
-      @data["delta_dir"] or raise "No delta_dir"
+      resolve_path(@data["delta_dir"] || "delta")
     end
 
     def groonga
       Groonga.new(@data["groonga"] || {})
+    end
+
+    def logger
+      @logger ||= create_logger
+    end
+
+    def log_path
+      resolve_path(File.join(@data["log_dir"] || "log",
+                             "groonga-sync.log"))
+    end
+
+    def log_age
+      @data["log_age"] || 7
+    end
+
+    def log_max_size
+      @data["log_max_size"] || (1024 * 1024)
+    end
+
+    def log_level
+      @data["log_level"] || "info"
+    end
+
+    def polling_interval
+      Float(@data["polling_interval"] || "60")
+    end
+
+    private
+    def create_logger
+      path = log_path
+      FileUtils.mkdir_p(File.dirname(path))
+      Logger.new(path,
+                 log_age,
+                 log_max_size,
+                 datetime_format: "%Y-%m-%dT%H:%M:%S.%N",
+                 level: log_level,
+                 progname: "groonga-sync")
     end
 
     class Groonga

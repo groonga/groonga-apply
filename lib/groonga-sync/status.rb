@@ -17,10 +17,11 @@ require "yaml"
 
 module GroongaSync
   class Status
-    def initialize(path)
-      @path = path
-      if File.exist?(path)
-        @data = YAML.safe_load(File.read(path))
+    def initialize(dir)
+      @dir = dir
+      @path = File.join(@dir, "status.yaml")
+      if File.exist?(@path)
+        @data = YAML.safe_load(File.read(@path))
       else
         @data = {}
       end
@@ -32,6 +33,7 @@ module GroongaSync
 
     def update(data)
       @data.update(data)
+      FileUtils.mkdir_p(@dir)
       File.open(@path, "w") do |output|
         output.puts(YAML.dump(@data))
       end
