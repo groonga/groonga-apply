@@ -136,29 +136,40 @@ class CommandLineTest < Test::Unit::TestCase
     output.read
   end
 
-  def add_schema(schema)
-    FileUtils.mkdir_p(@delta_schema_dir)
+  def add_schema(schema, packed: false)
     timestamp = Time.now.utc
-    path = timestamp.strftime("%Y-%m-%d-%H-%M-%S-%N.grn")
-    File.open("#{@delta_schema_dir}/#{path}", "w") do |input|
+    timestamp_string = timestamp.strftime("%Y-%m-%d-%H-%M-%S-%N")
+    path = "#{timestamp_string}.grn"
+    if packed
+      path = "packed/#{timestamp_string}/#{path}"
+    end
+    path = "#{@delta_schema_dir}/#{path}"
+    FileUtils.mkdir_p(File.dirname(path))
+    File.open(path, "w") do |input|
       input.puts(schema)
     end
   end
 
-  def add_upsert_data(table, load)
-    dir = "#{@delta_data_dir}/#{table}"
-    FileUtils.mkdir_p(dir)
+  def add_upsert_data(table, load, packed: false)
     timestamp = Time.now.utc
-    path = timestamp.strftime("%Y-%m-%d-%H-%M-%S-%N-upsert.grn")
-    File.open("#{dir}/#{path}", "w") do |input|
+    timestamp_string = timestamp.strftime("%Y-%m-%d-%H-%M-%S-%N")
+    path = "#{timestamp_string}-upsert.grn"
+    if packed
+      path = "packed/#{timestamp_string}/#{path}"
+    end
+    path = "#{@delta_data_dir}/#{table}/#{path}"
+    FileUtils.mkdir_p(File.dirname(path))
+    File.open(path, "w") do |input|
       input.puts(load)
     end
   end
 
-  def test_initial
+  data(:packed, [true, false])
+  def test_initial(data)
+    packed = data[:packed]
     run_groonga do |port|
       generate_config(port)
-      add_schema(<<-SCHEMA)
+      add_schema(<<-SCHEMA, packed: packed)
 table_create Items TABLE_HASH_KEY ShortText
 column_create Items name COLUMN_SCALAR ShortText
 column_create Items price COLUMN_SCALAR UInt32
@@ -169,10 +180,10 @@ table_create Items TABLE_HASH_KEY ShortText
 column_create Items name COLUMN_SCALAR ShortText
 column_create Items price COLUMN_SCALAR UInt32
       DUMP
-      add_schema(<<-SCHEMA)
+      add_schema(<<-SCHEMA, packed: packed)
 column_remove Items price
       SCHEMA
-      add_upsert_data("Items", <<-LOAD)
+      add_upsert_data("Items", <<-LOAD, packed: packed)
 load --table Items
 [
 {"_key": "item1", "name": "Shoes"},

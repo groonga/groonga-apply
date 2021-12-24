@@ -93,7 +93,7 @@ module GroongaSync
 
     def each_packed_target_path(dir, min_timestamp, max_timestamp)
       Dir.glob("#{dir}/packed/*") do |path|
-        next unless File.file?(path)
+        next unless File.directory?(path)
         timestamp, action, post_match = parse_timestamp(File.basename(path))
         next if action
         next unless post_match.empty?
@@ -168,7 +168,7 @@ module GroongaSync
       end
       if latest_packed_target
         targets << latest_packed_target
-        each_table_target(latest_packed_target.path, nil, nil) do |target|
+        each_table_target(latest_packed_target.path, name, nil, nil) do |target|
           latest_packed_target.targets << target
         end
       end
