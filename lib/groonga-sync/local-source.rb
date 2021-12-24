@@ -45,7 +45,7 @@ module GroongaSync
                                          target_columns: [])
         targets.sort_by(&:timestamp).each do |target|
           target.sync(client, processor)
-          @status.update("start_time" => target.timestamp.to_i)
+          @status.update("start_time" => target.timestamp.to_f)
         end
       end
     end
