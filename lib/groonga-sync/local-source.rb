@@ -45,14 +45,39 @@ module GroongaSync
                                          target_columns: [])
         targets.sort_by(&:timestamp).each do |target|
           target.sync(client, processor)
-          @status.update("start_time" => target.timestamp.to_f)
+          @status.update("start_time" => [
+                           target.timestamp.to_i,
+                           target.timestamp.nsec,
+                         ])
         end
       end
     end
 
     private
+    def build_time(year, month, day, hour, minute, second, nanosecond)
+      Time.utc(year,
+               month,
+               day,
+               hour,
+               minute,
+               Rational(second * 1_000_000_000 + nanosecond,
+                        1_000_000_000))
+    end
+
     def read_current_status
-      Time.at(@status.start_time || 0).utc
+      start_time_unix_time, start_time_nanosecond = @status.start_time
+      if start_time_unix_time
+        start_time = Time.at(start_time_unix_time).utc
+        build_time(start_time.year,
+                   start_time.month,
+                   start_time.day,
+                   start_time.hour,
+                   start_time.min,
+                   start_time.sec,
+                   start_time_nanosecond)
+      else
+        Time.at(0).utc
+      end
     end
 
     def each_target_path(dir, min_timestamp, max_timestamp)
@@ -60,7 +85,7 @@ module GroongaSync
         next unless File.file?(path)
         timestamp, action, post_match = parse_timestamp(File.basename(path))
         next if timestamp.nil?
-        next if min_timestamp and timestamp < min_timestamp
+        next if min_timestamp and timestamp <= min_timestamp
         next if max_timestamp and timestamp > max_timestamp
         yield(path, timestamp, action, post_match)
       end
@@ -167,13 +192,13 @@ module GroongaSync
         second = match[6].to_i
         nanosecond = match[7].to_i
         action = match[8]
-        timestamp = Time.utc(year,
-                             month,
-                             day,
-                             hour,
-                             minute,
-                             Rational(second * 1_000_000_000 + nanosecond,
-                                      1_000_000_000))
+        timestamp = build_time(year,
+                               month,
+                               day,
+                               hour,
+                               minute,
+                               second,
+                               nanosecond)
         [timestamp, action, match.post_match]
       else
         nil
